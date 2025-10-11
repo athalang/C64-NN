@@ -1,5 +1,5 @@
 (library
- (name nnef)
+ (name lex)
  (libraries
   core
   angstrom)
