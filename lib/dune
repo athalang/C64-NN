@@ -1,0 +1,6 @@
+(library
+ (name nnef)
+ (libraries
+  core
+  angstrom)
+ (preprocess (pps ppx_jane)))
