@@ -1,6 +1,16 @@
 (library
  (name lex)
+ (modules lex)
  (libraries
   core
   angstrom)
+ (preprocess (pps ppx_jane)))
+
+(library
+ (name syntax)
+ (modules syntax)
+ (libraries
+  core
+  angstrom
+  lex)
  (preprocess (pps ppx_jane)))

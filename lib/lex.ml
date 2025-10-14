@@ -28,6 +28,12 @@ let is_printable = function
   | '\x20' .. '\x7e' -> true
   | _ -> false
 
+let ws = take_while1 is_ws
+
+let morpheme c = char c <* ws
+
+let lexeme s = string s <* ws
+
 let ident =
   lift2
     (fun x xs -> String.make 1 x ^ xs)
@@ -38,11 +44,11 @@ let ident =
 let not_keyword kws s =
   if Set.mem kws s then fail "keyword" else return s
 
-let identifier = ident >>= not_keyword keywords
+let identifier = ident >>= not_keyword keywords <* ws
 
 let logical_literal =
-  string "true" *> return true
-  <|> string "false" *> return false
+  lexeme "true" *> return true
+  <|> lexeme "false" *> return false
 
 let string_literal =
   (char '"' <|> char '\'') >>= fun q ->
@@ -58,23 +64,26 @@ let string_literal =
   in
   many (choice [chunk; escaped_q; escaped_bs])
   <* char q
-  >>| String.concat
+  >>| String.concat <* ws
+
+let digits = take_while1 is_digit
 
 let numeric_literal =
-  let integer = take_while1 is_digit in
+  let integer = digits in
   let frac =
-    option "" (char '.' *> take_while1 is_digit
+    option "" (char '.' *> digits
       >>| fun f -> "." ^ f)
   in
   let exp =
     (char 'e' <|> char 'E') *>
     option '+' (char '+' <|> char '-')
-    >>= fun sgn -> take_while1 is_digit
+    >>= fun sgn -> digits
     >>| fun e -> let sgn_str =
       match sgn with '-' -> "-" | _ -> "+"
     in "e" ^ sgn_str ^ e
   in
   lift3 (fun i f e -> i ^ f ^ e) integer frac exp
-  >>| fun s -> float_of_string s
+  >>| (fun s -> float_of_string s)
+  <* ws
 
 let comment = char '#' *> take_till is_eol <* end_of_line
