@@ -20,6 +20,18 @@ type rhs =
   | RArr of rhs list
   | RTupl of rhs list
 
+type arg =
+  | ASolo of rhs
+  | AIden of string * rhs
+
+type invocation = Invoc of string * arg list
+
+type assignment = Ass of lhs * invocation
+
+type graph = Graph of graph_dec * assignment list
+
+type document = Doc of float * string list * graph
+
 let sep_by2 a b =
   sep_by1 a b >>= function
   | x :: y :: s -> return (x :: y :: s)
@@ -82,3 +94,48 @@ and tuple_rhs_expr () =
   morpheme '(' *>
   sep_by2 (morpheme ',') (rhs_expr ())
   <* morpheme ')'
+
+let argument =
+  let rh =
+    rhs_expr () >>| (fun r -> ASolo r)
+  in
+  let iden =
+    identifier <* morpheme '='
+  in
+  let ass =
+    lift2 (fun i r -> AIden (i,r)) iden (rhs_expr ())
+  in
+  choice [
+    rh;
+    ass
+  ]
+
+let arglist =
+  sep_by1 (morpheme ',') argument
+
+let invocation =
+  let args =
+    morpheme '(' *> arglist <* morpheme ')'
+  in
+  lift2 (fun i a -> Invoc (i,a)) identifier args
+
+let assign =
+  let invoc =
+    morpheme '=' *> invocation <* morpheme ';'
+  in
+  lift2 (fun l i -> Ass (l,i)) (lhs_expr ()) invoc
+
+let body =
+  morpheme '{' *> many assign <* morpheme '}'
+
+let graph_def =
+  lift2 (fun d b -> Graph (d,b)) graph_declaration body
+
+let version =
+  lexeme "version" *> numeric_literal <* morpheme ';'
+
+let extension =
+  lexeme "extension" *> many1 identifier <* morpheme ';'
+
+let document =
+  lift3 (fun v e g -> Doc (v,e,g)) version extension graph_def

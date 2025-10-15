@@ -28,7 +28,15 @@ let is_printable = function
   | '\x20' .. '\x7e' -> true
   | _ -> false
 
-let ws = take_while1 is_ws
+let comment = char '#' *> take_till is_eol <* end_of_line
+
+let ws =
+  skip_many (
+    choice [
+      comment;
+      take_while1 is_ws
+    ]
+  )
 
 let morpheme c = char c <* ws
 
@@ -85,5 +93,3 @@ let numeric_literal =
   lift3 (fun i f e -> i ^ f ^ e) integer frac exp
   >>| (fun s -> float_of_string s)
   <* ws
-
-let comment = char '#' *> take_till is_eol <* end_of_line
