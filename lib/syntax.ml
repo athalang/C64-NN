@@ -1,4 +1,3 @@
-open Core
 open Angstrom
 open Lex
 

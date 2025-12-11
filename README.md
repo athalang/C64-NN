@@ -1,3 +1,3 @@
 ## Install
 ### Dependencies
-```tar```
+- GNU ```tar```
